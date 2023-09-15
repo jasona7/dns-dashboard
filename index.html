@@ -109,6 +109,17 @@
             data: queryVolumeData
         });
         const socket = io.connect('http://localhost:3000');
+
+        // Log when the client successfully connects to the server
+        socket.on('connect', () => {
+            console.log('Client has connected to the server!');
+        });
+
+        // Log when the client disconnects from the server
+        socket.on('disconnect', () => {
+            console.log('The client has disconnected!');
+        });
+            
         const dnsDataHistory = [];
 
         function showHistory() {
@@ -135,6 +146,7 @@
         }
 
         socket.on('dnsData', (data) => {
+            console.log('Received data from server:', data);
             const index = queryTypeData.labels.indexOf(data.type);
             if (index !== -1) {
                 queryTypeData.datasets[0].data[index]++;
