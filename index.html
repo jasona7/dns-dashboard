@@ -13,6 +13,20 @@
         h1, h2 {
             color: #444;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
         canvas {
             max-width: 100%;
             height: auto;
@@ -40,7 +54,7 @@
 </head>
 <body>
     <h1>DNS Dashboard</h1>
-    <button onclick="showHistory()">Show History</button>
+    <button id="toggleHistoryButton" onclick="toggleHistory()">Show History</button>
     <button onclick="exportToCSV()">Export to CSV</button>
     <div id="dnsHistory"></div>
     <div class="dashboard-grid">
@@ -62,70 +76,32 @@
                 <canvas id="queryVolumeChart"></canvas>
             </div>
         </div>
+        <div class="resizable">
+            <div id="dnsResponseTimeDiv">
+                <h2>DNS Response Time Over Time</h2>
+                <canvas id="dnsResponseTimeChart"></canvas>
+            </div>
+        </div>
     </div>
     <script>
-        const queryTypeData = {
-            labels: ['A', 'AAAA', 'CNAME', 'MX'],
-            datasets: [{
-                label: 'Query Types',
-                data: [0, 0, 0, 0],
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)'
-                ]
-            }]
-        };
-        const mostResolvedDomainsData = {
-            labels: [],
-            datasets: [{
-                label: 'Frequency',
-                data: [],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)'
-            }]
-        };
-        const queryVolumeData = {
-            labels: [],
-            datasets: [{
-                label: 'Query Volume',
-                data: [],
-                borderColor: 'rgba(75, 192, 192, 0.2)'
-            }]
-        };
-        const queryTypeCtx = document.getElementById('queryTypeChart').getContext('2d');
-        const queryTypeChart = new Chart(queryTypeCtx, {
-            type: 'pie',
-            data: queryTypeData
-        });
-        const mostResolvedDomainsCtx = document.getElementById('mostResolvedDomainsChart').getContext('2d');
-        const mostResolvedDomainsChart = new Chart(mostResolvedDomainsCtx, {
-            type: 'bar',
-            data: mostResolvedDomainsData
-        });
-        const queryVolumeCtx = document.getElementById('queryVolumeChart').getContext('2d');
-        const queryVolumeChart = new Chart(queryVolumeCtx, {
-            type: 'line',
-            data: queryVolumeData
-        });
-        const socket = io.connect('http://localhost:3000');
+        let isHistoryVisible = false;  // Variable to track if the history is visible or not
 
-        // Log when the client successfully connects to the server
-        socket.on('connect', () => {
-            console.log('Client has connected to the server!');
-        });
-
-        // Log when the client disconnects from the server
-        socket.on('disconnect', () => {
-            console.log('The client has disconnected!');
-        });
-            
-        const dnsDataHistory = [];
+        // Function to toggle the history view
+        function toggleHistory() {
+            if (isHistoryVisible) {
+                document.getElementById('dnsHistory').innerHTML = '';
+                document.getElementById('toggleHistoryButton').innerText = 'Show History';
+            } else {
+                showHistory();
+                document.getElementById('toggleHistoryButton').innerText = 'Close History';
+            }
+            isHistoryVisible = !isHistoryVisible;
+        }
 
         function showHistory() {
-            let historyHtml = '<h2>DNS Query History</h2><table><tr><th>Type</th><th>Domain</th></tr>';
+            let historyHtml = '<h2>DNS Query History</h2><table><tr><th>Timestamp</th><th>Type</th><th>Domain</th></tr>';
             for (const item of dnsDataHistory) {
-                historyHtml += `<tr><td>${item.type}</td><td>${item.domain}</td></tr>`;
+                historyHtml += `<tr><td>${item.timestamp}</td><td>${item.type}</td><td>${item.domain}</td></tr>`;
             }
             historyHtml += '</table>';
             document.getElementById('dnsHistory').innerHTML = historyHtml;
@@ -144,6 +120,70 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        const queryTypeData = {
+            labels: ['A', 'AAAA', 'CNAME', 'MX'],
+            datasets: [{
+                label: 'Query Types',
+                data: [0, 0, 0, 0],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ]
+            }]
+        };
+
+        const mostResolvedDomainsData = {
+            labels: [],
+            datasets: [{
+                label: 'Frequency',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)'
+            }]
+        };
+
+        const queryVolumeData = {
+            labels: [],
+            datasets: [{
+                label: 'Query Volume',
+                data: [],
+                borderColor: 'rgba(75, 192, 192, 0.2)'
+            }]
+        };
+
+        const queryTypeCtx = document.getElementById('queryTypeChart').getContext('2d');
+        const queryTypeChart = new Chart(queryTypeCtx, {
+            type: 'pie',
+            data: queryTypeData
+        });
+
+        const mostResolvedDomainsCtx = document.getElementById('mostResolvedDomainsChart').getContext('2d');
+        const mostResolvedDomainsChart = new Chart(mostResolvedDomainsCtx, {
+            type: 'bar',
+            data: mostResolvedDomainsData
+        });
+
+        const queryVolumeCtx = document.getElementById('queryVolumeChart').getContext('2d');
+        const queryVolumeChart = new Chart(queryVolumeCtx, {
+            type: 'line',
+            data: queryVolumeData
+        });
+
+        const socket = io.connect('http://localhost:3000');
+
+        // Log when the client successfully connects to the server
+        socket.on('connect', () => {
+            console.log('Client has connected to the server!');
+        });
+
+        // Log when the client disconnects from the server
+        socket.on('disconnect', () => {
+            console.log('The client has disconnected!');
+        });
+
+        const dnsDataHistory = [];
 
         socket.on('dnsData', (data) => {
             console.log('Received data from server:', data);
