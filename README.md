@@ -53,6 +53,7 @@ After launching the dashboard, you can:
 - Resize widgets to fit your viewing preferences.
 - Click "Show History" to see a table of recent DNS queries.
 - Click "Export to CSV" to download the DNS query data.
+= Run dig_traffic.sh script to create DNS lookup traffic.
 
 ## Contributing
 
